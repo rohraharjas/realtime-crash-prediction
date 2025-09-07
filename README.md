@@ -25,7 +25,8 @@ This project is a **real-time crash prediction system** that consumes video fram
 ## 📂 Project Structure  
 ```bash
 video-crash-prediction-pipeline/
-├── consumer.py        # Kafka consumer + model inference + alerting
-├── producer.py        # (Optional) For testing: pushes mock video frames into Kafka
+├── inference.py       # Kafka consumer + model inference + alerting
+├── client.py          # (Optional) For testing: pushes mock video frames into Kafka
+├── flink.sql          # Flink SQL queries
 ├── requirements.txt   # Python dependencies
 └── README.md          # Project documentation
