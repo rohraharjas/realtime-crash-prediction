@@ -10,12 +10,14 @@ import cv2
 from confluent_kafka import Consumer, KafkaException
 import torch
 from transformers import AutoFeatureExtractor, VideoMAEForVideoClassification
-from client import load_kafka_config
+from utils.config import load_kafka_config
+from .processing import decode_base64_to_pil
+from .alert import send_alert_to_socket
 
 # Confluent / SASL settings for Confluent Cloud
 CONFIG = load_kafka_config()
 
-INPUT_TOPIC = CONFIG["input.topic"]
+INPUT_TOPIC = CONFIG["flink.output.topic"]
 
 # Model & inference settings
 HF_MODEL_ID = "zhiyaowang/VideoMaev2-giant-nexar-solution"
@@ -31,7 +33,6 @@ ALERT_PAYLOAD_TEMPLATE = {
     "timestamp": None,
     "batch_size": WINDOW_SIZE
 }
-SOCKET_SEND_TIMEOUT = 5  # seconds
 
 # -----------------------
 # Load model + feature extractor
@@ -46,21 +47,6 @@ print("Model loaded.")
 # -----------------------
 # Helpers: image decoding + preprocessing
 # -----------------------
-def decode_base64_to_pil(base64_str: str) -> Image.Image:
-    """Decode base64 string to PIL Image (RGB)."""
-    img_bytes = base64.b64decode(base64_str)
-    # try cv2 then convert to PIL
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if img_cv is None:
-        # fallback: open via PIL
-        from io import BytesIO
-        return Image.open(BytesIO(img_bytes)).convert("RGB")
-    # convert BGR->RGB
-    img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-    pil = Image.fromarray(img_rgb)
-    return pil
-
 def preprocess_frames_for_model(frames: List[Image.Image]):
     """
     Accepts list of PIL images length = WINDOW_SIZE.
@@ -92,48 +78,6 @@ def predict_crash_probability(frames: List[Image.Image]) -> float:
         # probs_t = torch.softmax(logits / 2.0, dim=1)
         # prob_crash = probs_t[:,1].cpu().item()
     return prob_crash
-
-# -----------------------
-# Alert sender: connect to socket and send JSON
-# -----------------------
-def send_alert_to_socket(socket_key: str, payload: Dict):
-    """
-    socket_key is expected as "host:port" or "host,port" or JSON containing host/port.
-    We will attempt parsing safely.
-    """
-    # try parse host:port
-    if not socket_key:
-        print("Empty socket key; skipping alert send.")
-        return False
-
-    host = None
-    port = None
-    try:
-        if ":" in socket_key:
-            host, port_s = socket_key.split(":", 1)
-            port = int(port_s)
-        elif "," in socket_key:
-            host, port_s = socket_key.split(",", 1)
-            port = int(port_s)
-        else:
-            # maybe just a host (no port); default port?
-            host = socket_key.strip()
-            port = 80
-    except Exception as ex:
-        print(f"Failed parsing socket key `{socket_key}`: {ex}")
-        return False
-
-    try:
-        with socket.create_connection((host, port), timeout=SOCKET_SEND_TIMEOUT) as s:
-            s.settimeout(SOCKET_SEND_TIMEOUT)
-            data = json.dumps(payload).encode("utf-8")
-            s.sendall(data)
-            print(f"Alert sent to {host}:{port}: {payload}")
-        return True
-    except Exception as ex:
-        print(f"Failed to send alert to {host}:{port}: {ex}")
-        return False
-
 # -----------------------
 # Kafka consumer loop
 # -----------------------

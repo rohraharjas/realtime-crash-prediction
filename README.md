@@ -22,6 +22,12 @@ This project is a **real-time crash prediction system** that consumes video fram
 
 ---
 
+## 🔄 Pipeline
+
+![Pipeline](./public/pipeline.png)
+
+---
+
 ## 📂 Project Structure  
 ```bash
 video-crash-prediction-pipeline/

@@ -26,7 +26,7 @@ CREATE TABLE frame_batches (
     batch_frames ARRAY<STRING>
 ) WITH (
     'connector' = 'kafka',
-    'topic' = '${output.topic}',
+    'topic' = '${flink.output.topic}',
     'properties.bootstrap.servers' = '${bootstrap.servers}',
     'properties.security.protocol' = 'SASL_SSL',
     'properties.sasl.mechanism' = 'PLAIN',

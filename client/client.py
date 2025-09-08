@@ -1,30 +1,7 @@
-from confluent_kafka import Producer
 from playwright.async_api import async_playwright
 from datetime import datetime
 import asyncio
-import socket
-import configparser
-
-def load_kafka_config(file_path="client.properties"):
-    """Reads client.properties into a dict usable by confluent_kafka"""
-    conf = {}
-    parser = configparser.ConfigParser()
-
-    with open(file_path) as f:
-        props = "[default]\n" + f.read()
-
-    parser.read_string(props)
-    for key, value in parser["default"].items():
-        conf[key] = value
-    return conf
-
-class ProducerNode:
-    def __init__(self, topic):
-        kafka_config = load_kafka_config()
-        self.producer = Producer(kafka_config)
-        self.topic = topic
-        hostname = socket.gethostname()
-        self.ip_address = socket.gethostbyname(hostname)
+from nodes import ProducerNode
 
 class Source(ProducerNode):
     def delivery_report(self, err, msg):
