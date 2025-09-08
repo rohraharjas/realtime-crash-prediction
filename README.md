@@ -29,3 +29,9 @@ The inspiration for this project comes from the [Nexar Dashcam Crash Prediction 
 ![Pipeline](./public/pipeline.png)
 
 ---
+
+## 🛠️ Built With
+
+![Apache Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apache-kafka&logoColor=white)
+![Apache Flink](https://img.shields.io/badge/Flink-E6526F?logo=apache-flink&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?logo=googlecloud&logoColor=white)
